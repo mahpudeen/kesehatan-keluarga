@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/plus-jakarta-sans';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans Variable', system-ui, sans-serif;
+
+  /* Surface palette */
+  --color-bg: #f4f8f6;
+  --color-surface: #ffffff;
+  --color-line: #dde7e2;
+  --color-ink: #14231d;
+  --color-ink-muted: #5b6b63;
+
+  /* Brand */
+  --color-primary: #0f766e;
+  --color-primary-strong: #0b5a54;
+  --color-primary-soft: #d9f0ec;
+
+  /* Severity — single source of truth */
+  --color-sev-sehat: #3ba776;
+  --color-sev-ringan: #f2c230;
+  --color-sev-sedang: #f08a24;
+  --color-sev-parah: #d93b3b;
+  --color-unrecorded: #e6ece9;
+
+  /* Radius */
+  --radius-control: 0.875rem;
+  --radius-card: 1rem;
+  --radius-sheet: 1.5rem;
+}
+
+/* Base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Safe area for bottom nav */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Sheet slide-up animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+

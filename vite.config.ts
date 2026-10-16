@@ -1,9 +1,14 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': new URL('src', import.meta.url).pathname,
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -11,6 +16,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
       workbox: {
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/__\//],
       },
       manifest: {
@@ -18,8 +24,8 @@ export default defineConfig({
         short_name: 'Kesehatan',
         description: 'Catat kesehatan harian keluarga',
         lang: 'id',
-        theme_color: '#059669',
-        background_color: '#ecfdf5',
+        theme_color: '#0f766e',
+        background_color: '#f4f8f6',
         display: 'standalone',
         start_url: '/',
         icons: [
