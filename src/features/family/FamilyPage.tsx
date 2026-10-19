@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useFamily } from '@/features/family/FamilyContext';
 import { useMembers } from '@/features/members/MembersContext';
-import { addMember, archiveMember, updateMember } from '@/features/members/service';
+import {
+  addMember,
+  archiveMember,
+  restoreMember,
+  updateMember,
+} from '@/features/members/service';
+import { ArchivedMemberList } from '@/features/members/ArchivedMemberList';
 import { createInvite } from '@/features/invites/service';
 import { fireAndForget } from '@/shared/firebase/fireAndForget';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -38,6 +44,7 @@ export default function FamilyPage() {
   const familyId = family.id;
   const uid = user.uid;
   const isOwner = family.ownerUid === user.uid;
+  const archivedMembers = members.filter((member) => member.archived);
 
   async function handleAdd() {
     if (!name.trim()) return;
@@ -95,7 +102,11 @@ export default function FamilyPage() {
 
           {activeMembers.length === 0 ? (
             <EmptyState
-              message="Belum ada anggota. Tambahkan anggota pertama."
+              message={
+                archivedMembers.length > 0
+                  ? 'Tidak ada anggota aktif. Pulihkan anggota di bawah ini.'
+                  : 'Belum ada anggota. Tambahkan anggota pertama.'
+              }
               icon={<Users size={32} />}
             />
           ) : (
@@ -132,6 +143,13 @@ export default function FamilyPage() {
             </ul>
           )}
         </section>
+
+        <ArchivedMemberList
+          members={archivedMembers}
+          onRestore={(member) => {
+            fireAndForget(restoreMember(familyId, member.id), 'restore-member');
+          }}
+        />
 
         {/* Add member form */}
         <section className="bg-surface rounded-[var(--radius-card)] p-4 shadow-sm space-y-3">

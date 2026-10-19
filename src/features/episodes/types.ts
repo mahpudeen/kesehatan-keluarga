@@ -16,3 +16,10 @@ export interface Episode {
   visits?: DoctorVisit[];
   createdAt: unknown; // Firestore Timestamp
 }
+
+export interface UpdateVisitParams {
+  familyId: string;
+  episodeId: string;
+  visits: DoctorVisit[];
+  visit: DoctorVisit;
+}

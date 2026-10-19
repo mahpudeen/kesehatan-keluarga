@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { todayStr } from '@/shared/lib/date';
-import { addVisit } from '@/features/episodes/service';
+import { addVisit, updateVisit } from '@/features/episodes/service';
 import { Button } from '@/shared/ui/Button';
 import { InputField } from '@/shared/ui/Field';
 import type { DoctorVisit } from '@/features/episodes/types';
@@ -8,45 +8,63 @@ import type { DoctorVisit } from '@/features/episodes/types';
 interface VisitFormProps {
   familyId: string;
   episodeId: string;
+  visits: DoctorVisit[];
+  visit?: DoctorVisit;
   onDone: () => void;
 }
 
-function useVisitForm() {
-  const [date, setDate] = useState(todayStr());
-  const [doctor, setDoctor] = useState('');
-  const [facility, setFacility] = useState('');
-  const [diagnosis, setDiagnosis] = useState('');
-  const [note, setNote] = useState('');
+function useVisitForm(visit?: DoctorVisit) {
+  const [date, setDate] = useState(visit?.date ?? todayStr());
+  const [doctor, setDoctor] = useState(visit?.doctorName ?? '');
+  const [facility, setFacility] = useState(visit?.facility ?? '');
+  const [diagnosis, setDiagnosis] = useState(visit?.diagnosis ?? '');
+  const [note, setNote] = useState(visit?.note ?? '');
 
-  function reset() {
-    setDate(todayStr());
-    setDoctor('');
-    setFacility('');
-    setDiagnosis('');
-    setNote('');
-  }
-
-  return { date, setDate, doctor, setDoctor, facility, setFacility, diagnosis, setDiagnosis, note, setNote, reset };
+  return {
+    date,
+    setDate,
+    doctor,
+    setDoctor,
+    facility,
+    setFacility,
+    diagnosis,
+    setDiagnosis,
+    note,
+    setNote,
+  };
 }
 
-export function VisitForm({ familyId, episodeId, onDone }: VisitFormProps) {
-  const form = useVisitForm();
+export function VisitForm({ familyId, episodeId, visits, visit, onDone }: VisitFormProps) {
+  const form = useVisitForm(visit);
 
   function handleSave() {
-    const visit: Omit<DoctorVisit, 'id'> = {
+    const visitInput: Omit<DoctorVisit, 'id'> = {
       date: form.date,
       doctorName: form.doctor.trim(),
       facility: form.facility.trim(),
       diagnosis: form.diagnosis.trim(),
       note: form.note.trim(),
     };
-    addVisit(familyId, episodeId, visit);
-    form.reset();
+    if (visit) {
+      updateVisit({
+        familyId,
+        episodeId,
+        visits,
+        visit: { id: visit.id, ...visitInput },
+      });
+    } else {
+      addVisit(familyId, episodeId, visitInput);
+    }
     onDone();
   }
 
   return (
-    <div className="space-y-3 rounded-[var(--radius-card)] border border-primary-soft bg-primary-soft/30 p-4">
+    <div
+      className="space-y-3 rounded-[var(--radius-card)] border border-primary-soft bg-primary-soft/30 p-4"
+    >
+      <h2 className="font-semibold text-ink">
+        {visit ? 'Edit kunjungan dokter' : 'Tambah kunjungan dokter'}
+      </h2>
       <InputField
         id="visit-date"
         label="Tanggal kunjungan"
@@ -88,7 +106,7 @@ export function VisitForm({ familyId, episodeId, onDone }: VisitFormProps) {
           Batal
         </Button>
         <Button id="btn-save-visit" onClick={handleSave} fullWidth size="sm">
-          Simpan kunjungan
+          {visit ? 'Simpan perubahan' : 'Simpan kunjungan'}
         </Button>
       </div>
     </div>

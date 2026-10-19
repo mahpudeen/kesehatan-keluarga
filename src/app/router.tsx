@@ -6,6 +6,7 @@ import { AuthGate, FamilyGate } from './gates';
 const TodayPage = lazy(() => import('@/features/daylog/TodayPage'));
 const HistoryPage = lazy(() => import('@/features/history/HistoryPage'));
 const EpisodeDetailPage = lazy(() => import('@/features/episodes/EpisodeDetailPage'));
+const EpisodeSummaryPage = lazy(() => import('@/features/episodes/EpisodeSummaryPage'));
 const FamilyPage = lazy(() => import('@/features/family/FamilyPage'));
 const AccountPage = lazy(() => import('@/features/account/AccountPage'));
 
@@ -27,6 +28,10 @@ export default function AppRouter() {
               <Route index element={<TodayPage />} />
               <Route path="riwayat" element={<HistoryPage />} />
               <Route path="riwayat/penyakit/:episodeId" element={<EpisodeDetailPage />} />
+              <Route
+                path="riwayat/penyakit/:episodeId/ringkasan"
+                element={<EpisodeSummaryPage />}
+              />
               <Route path="keluarga" element={<FamilyPage />} />
               <Route path="akun" element={<AccountPage />} />
             </Route>

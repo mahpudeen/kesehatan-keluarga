@@ -10,9 +10,15 @@ interface MedicationListProps {
   familyId: string;
   medications: Medication[];
   onAddClick: () => void;
+  onEditClick: (medication: Medication) => void;
 }
 
-export function MedicationList({ familyId, medications, onAddClick }: MedicationListProps) {
+export function MedicationList({
+  familyId,
+  medications,
+  onAddClick,
+  onEditClick,
+}: MedicationListProps) {
   const [confirmDelete, setConfirmDelete] = useState<Medication | null>(null);
 
   return (
@@ -44,12 +50,20 @@ export function MedicationList({ familyId, medications, onAddClick }: Medication
                   </p>
                   {m.note && <p className="text-ink-muted text-xs mt-0.5">{m.note}</p>}
                 </div>
-                <button
-                  onClick={() => setConfirmDelete(m)}
-                  className="flex-shrink-0 text-xs text-ink-muted underline underline-offset-2"
-                >
-                  Hapus
-                </button>
+                <div className="flex flex-shrink-0 items-center">
+                  <button
+                    onClick={() => onEditClick(m)}
+                    className="min-h-11 px-2 text-xs font-semibold text-primary"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(m)}
+                    className="min-h-11 px-2 text-xs text-ink-muted"
+                  >
+                    Hapus
+                  </button>
+                </div>
               </div>
             </div>
           ))}

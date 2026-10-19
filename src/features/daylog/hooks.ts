@@ -34,3 +34,41 @@ export function useMonthLogs(familyId: string, start: string, end: string) {
   );
   return useCollection<DayLog>(q, transformDayLog);
 }
+
+/** Subscribe to day logs in any date range, optionally disabled to avoid unnecessary reads. */
+export function useDateRangeLogs(
+  familyId: string,
+  start: string,
+  end: string,
+  enabled = true,
+) {
+  const q = useMemo(
+    () =>
+      enabled && familyId
+        ? query(
+            collection(db, 'families', familyId, 'dayLogs'),
+            where('date', '>=', start),
+            where('date', '<=', end),
+          )
+        : null,
+    [enabled, end, familyId, start],
+  );
+  return useCollection<DayLog>(q, transformDayLog);
+}
+
+/** Subscribe to the sick-day logs attached to one episode. */
+export function useEpisodeLogs(familyId: string, episodeId: string) {
+  const q = useMemo(
+    () =>
+      query(
+        collection(db, 'families', familyId, 'dayLogs'),
+        where('episodeId', '==', episodeId),
+      ),
+    [familyId, episodeId],
+  );
+  const result = useCollection<DayLog>(q, transformDayLog);
+  return {
+    ...result,
+    data: [...result.data].sort((a, b) => a.date.localeCompare(b.date)),
+  };
+}

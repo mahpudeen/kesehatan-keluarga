@@ -1,42 +1,54 @@
 import { useState } from 'react';
 import { todayStr } from '@/shared/lib/date';
-import { addMedication } from '@/features/medications/service';
+import { addMedication, updateMedication } from '@/features/medications/service';
 import { Button } from '@/shared/ui/Button';
 import { InputField } from '@/shared/ui/Field';
+import type { Medication } from '@/features/medications/types';
 
 interface MedicationFormProps {
   familyId: string;
   episodeId: string;
   memberId: string;
+  medication?: Medication;
   onDone: () => void;
 }
 
-function useMedicationForm() {
-  const [name, setName] = useState('');
-  const [dose, setDose] = useState('');
-  const [freq, setFreq] = useState('');
-  const [date, setDate] = useState(todayStr());
-  const [prescribed, setPrescribed] = useState(true);
-  const [note, setNote] = useState('');
+function useMedicationForm(medication?: Medication) {
+  const [name, setName] = useState(medication?.name ?? '');
+  const [dose, setDose] = useState(medication?.dose ?? '');
+  const [freq, setFreq] = useState(medication?.frequency ?? '');
+  const [date, setDate] = useState(medication?.startDate ?? todayStr());
+  const [prescribed, setPrescribed] = useState(medication?.prescribedByDoctor ?? true);
+  const [note, setNote] = useState(medication?.note ?? '');
 
-  function reset() {
-    setName('');
-    setDose('');
-    setFreq('');
-    setDate(todayStr());
-    setPrescribed(true);
-    setNote('');
-  }
-
-  return { name, setName, dose, setDose, freq, setFreq, date, setDate, prescribed, setPrescribed, note, setNote, reset };
+  return {
+    name,
+    setName,
+    dose,
+    setDose,
+    freq,
+    setFreq,
+    date,
+    setDate,
+    prescribed,
+    setPrescribed,
+    note,
+    setNote,
+  };
 }
 
-export function MedicationForm({ familyId, episodeId, memberId, onDone }: MedicationFormProps) {
-  const form = useMedicationForm();
+export function MedicationForm({
+  familyId,
+  episodeId,
+  memberId,
+  medication,
+  onDone,
+}: MedicationFormProps) {
+  const form = useMedicationForm(medication);
 
   function handleSave() {
     if (!form.name.trim()) return;
-    addMedication(familyId, {
+    const medicationInput = {
       episodeId,
       memberId,
       name: form.name.trim(),
@@ -45,13 +57,25 @@ export function MedicationForm({ familyId, episodeId, memberId, onDone }: Medica
       startDate: form.date,
       prescribedByDoctor: form.prescribed,
       note: form.note.trim(),
-    });
-    form.reset();
+    };
+    if (medication) {
+      updateMedication(familyId, { ...medication, ...medicationInput });
+    } else {
+      addMedication(familyId, medicationInput);
+    }
     onDone();
   }
 
   return (
-    <div className="space-y-3 rounded-[var(--radius-card)] border border-primary-soft bg-primary-soft/30 p-4">
+    <div
+      className={
+        'space-y-3 rounded-[var(--radius-card)] border border-primary-soft '
+        + 'bg-primary-soft/30 p-4'
+      }
+    >
+      <h2 className="font-semibold text-ink">
+        {medication ? 'Edit obat' : 'Tambah obat'}
+      </h2>
       <InputField
         id="med-name"
         label="Nama obat"
@@ -89,22 +113,26 @@ export function MedicationForm({ familyId, episodeId, memberId, onDone }: Medica
           <button
             type="button"
             onClick={() => form.setPrescribed(true)}
-            className={`rounded-[var(--radius-control)] py-2 text-sm font-medium transition-colors ${
-              form.prescribed
-                ? 'bg-primary text-white'
-                : 'bg-bg text-ink-muted border border-line'
-            }`}
+            className={
+              `rounded-[var(--radius-control)] py-2 text-sm font-medium transition-colors ${
+                form.prescribed
+                  ? 'bg-primary text-white'
+                  : 'bg-bg text-ink-muted border border-line'
+              }`
+            }
           >
             Resep dokter
           </button>
           <button
             type="button"
             onClick={() => form.setPrescribed(false)}
-            className={`rounded-[var(--radius-control)] py-2 text-sm font-medium transition-colors ${
-              !form.prescribed
-                ? 'bg-primary text-white'
-                : 'bg-bg text-ink-muted border border-line'
-            }`}
+            className={
+              `rounded-[var(--radius-control)] py-2 text-sm font-medium transition-colors ${
+                !form.prescribed
+                  ? 'bg-primary text-white'
+                  : 'bg-bg text-ink-muted border border-line'
+              }`
+            }
           >
             Beli sendiri
           </button>
@@ -130,7 +158,7 @@ export function MedicationForm({ familyId, episodeId, memberId, onDone }: Medica
           fullWidth
           size="sm"
         >
-          Simpan obat
+          {medication ? 'Simpan perubahan' : 'Simpan obat'}
         </Button>
       </div>
     </div>

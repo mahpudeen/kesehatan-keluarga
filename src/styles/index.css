@@ -86,3 +86,36 @@ body {
   animation: slide-up 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: white;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .print-report-shell,
+  .print-report {
+    display: block;
+    width: 100%;
+    max-width: none;
+    min-height: auto;
+    padding: 0;
+    background: white;
+  }
+
+  .print-report {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+  }
+}

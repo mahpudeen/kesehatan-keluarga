@@ -1,4 +1,6 @@
 import type { Episode } from './types';
+import { differenceInCalendarDays } from 'date-fns';
+import { parseLocalDate } from '@/shared/lib/date';
 
 /**
  * Find the episode that covers the given date for a member.
@@ -27,4 +29,12 @@ export function findEpisodeForDate(
  */
 export function findOpenEpisode(episodes: Episode[], memberId: string): Episode | undefined {
   return episodes.find((e) => e.memberId === memberId && e.endDate === null);
+}
+
+/** Inclusive number of calendar days in an episode. */
+export function episodeDurationDays(startDate: string, endDate: string): number {
+  return Math.max(
+    1,
+    differenceInCalendarDays(parseLocalDate(endDate), parseLocalDate(startDate)) + 1,
+  );
 }

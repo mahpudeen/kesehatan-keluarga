@@ -11,9 +11,16 @@ interface VisitListProps {
   episodeId: string;
   visits: DoctorVisit[];
   onAddClick: () => void;
+  onEditClick: (visit: DoctorVisit) => void;
 }
 
-export function VisitList({ familyId, episodeId, visits, onAddClick }: VisitListProps) {
+export function VisitList({
+  familyId,
+  episodeId,
+  visits,
+  onAddClick,
+  onEditClick,
+}: VisitListProps) {
   const [confirmDelete, setConfirmDelete] = useState<DoctorVisit | null>(null);
 
   const sorted = [...visits].sort((a, b) => b.date.localeCompare(a.date));
@@ -38,12 +45,20 @@ export function VisitList({ familyId, episodeId, visits, onAddClick }: VisitList
             <div key={v.id} className="bg-bg rounded-[var(--radius-card)] p-3 text-sm">
               <div className="flex items-center justify-between mb-1">
                 <p className="font-semibold text-ink">{v.date}</p>
-                <button
-                  onClick={() => setConfirmDelete(v)}
-                  className="text-xs text-ink-muted underline underline-offset-2"
-                >
-                  Hapus
-                </button>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => onEditClick(v)}
+                    className="min-h-11 px-2 text-xs font-semibold text-primary"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(v)}
+                    className="min-h-11 px-2 text-xs text-ink-muted"
+                  >
+                    Hapus
+                  </button>
+                </div>
               </div>
               {v.doctorName && <p className="text-ink-muted">{v.doctorName}</p>}
               {v.facility && <p className="text-ink-muted text-xs">{v.facility}</p>}

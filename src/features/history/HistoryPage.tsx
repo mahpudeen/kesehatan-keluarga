@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { subDays } from 'date-fns';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useFamily } from '@/features/family/FamilyContext';
 import { useMembers } from '@/features/members/MembersContext';
 import { useAllEpisodes } from '@/features/episodes/hooks';
-import { useMonthLogs } from '@/features/daylog/hooks';
+import { useDateRangeLogs, useMonthLogs } from '@/features/daylog/hooks';
 import { setDayStatus, saveSickDay } from '@/features/daylog/service';
 import { findEpisodeForDate } from '@/features/episodes/utils';
 import { todayStr } from '@/shared/lib/date';
@@ -13,9 +14,12 @@ import { Avatar } from '@/shared/ui/Avatar';
 import { Stethoscope } from 'lucide-react';
 import { CalendarGrid, pad } from './components/CalendarGrid';
 import { DayDetailSheet } from './components/DayDetailSheet';
+import { InsightsView } from './components/InsightsView';
 import { useNavigate } from 'react-router-dom';
 import SickSheet from '@/features/daylog/components/SickSheet';
 import type { Member } from '@/features/members/types';
+
+type HistoryView = 'kalender' | 'penyakit' | 'insight';
 
 export default function HistoryPage() {
   const { user } = useAuth();
@@ -23,15 +27,16 @@ export default function HistoryPage() {
   const { members, activeMembers } = useMembers();
   const navigate = useNavigate();
 
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
+  const [currentDate] = useState(() => new Date());
+  const [year, setYear] = useState(currentDate.getFullYear());
+  const [month, setMonth] = useState(currentDate.getMonth());
   const [filterMemberId, setFilterMemberId] = useState<string>('all');
   const [selected, setSelected] = useState<string | null>(null);
   const [sickFor, setSickFor] = useState<Member | null>(null);
-  const [view, setView] = useState<'kalender' | 'penyakit'>('kalender');
+  const [view, setView] = useState<HistoryView>('kalender');
 
-  const today = todayStr();
+  const today = todayStr(currentDate);
+  const insightStart = todayStr(subDays(currentDate, 89));
 
   const start = `${year}-${pad(month + 1)}-01`;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -39,6 +44,12 @@ export default function HistoryPage() {
 
   const { data: monthLogs } = useMonthLogs(family?.id ?? '', start, end);
   const { data: episodes } = useAllEpisodes(family?.id ?? '');
+  const insightLogsResult = useDateRangeLogs(
+    family?.id ?? '',
+    insightStart,
+    today,
+    view === 'insight',
+  );
 
   if (!family || !user) return null;
 
@@ -60,9 +71,10 @@ export default function HistoryPage() {
           options={[
             { value: 'kalender', label: 'Kalender' },
             { value: 'penyakit', label: 'Penyakit' },
+            { value: 'insight', label: 'Insight' },
           ]}
           value={view}
-          onChange={(v) => setView(v as 'kalender' | 'penyakit')}
+          onChange={(v) => setView(v as HistoryView)}
           className="w-full"
         />
       </div>
@@ -99,7 +111,7 @@ export default function HistoryPage() {
               today={today}
             />
           </>
-        ) : (
+        ) : view === 'penyakit' ? (
           /* Episode list */
           <div className="space-y-2">
             {sortedEpisodes.length === 0 && (
@@ -115,7 +127,10 @@ export default function HistoryPage() {
                   key={ep.id}
                   id={`ep-${ep.id}`}
                   onClick={() => navigate(`/riwayat/penyakit/${ep.id}`)}
-                  className="w-full flex items-center gap-3 bg-surface rounded-[var(--radius-card)] p-3 shadow-sm text-left active:scale-98 transition-all"
+                  className={
+                    'w-full flex items-center gap-3 bg-surface rounded-[var(--radius-card)] '
+                    + 'p-3 shadow-sm text-left active:scale-98 transition-all'
+                  }
                 >
                   {member && <Avatar name={member.name} color={member.color} size="sm" />}
                   <div className="flex-1 min-w-0">
@@ -143,6 +158,15 @@ export default function HistoryPage() {
               );
             })}
           </div>
+        ) : (
+          <InsightsView
+            logs={insightLogsResult.data}
+            episodes={episodes}
+            members={members}
+            today={today}
+            loading={insightLogsResult.loading}
+            error={insightLogsResult.error}
+          />
         )}
       </div>
 

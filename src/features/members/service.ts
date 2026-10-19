@@ -24,6 +24,12 @@ export async function archiveMember(familyId: string, memberId: string): Promise
   });
 }
 
+export async function restoreMember(familyId: string, memberId: string): Promise<void> {
+  await updateDoc(doc(db, 'families', familyId, 'members', memberId), {
+    archived: false,
+  });
+}
+
 export async function updateMember(
   familyId: string,
   memberId: string,
