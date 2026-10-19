@@ -4,17 +4,21 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { useFamily } from '@/features/family/FamilyContext';
 import { useMembers } from '@/features/members/MembersContext';
 import { useAllEpisodes } from '@/features/episodes/hooks';
-import { useDateRangeLogs, useMonthLogs } from '@/features/daylog/hooks';
+import { useDateRangeLogs, useMonthLogs, useSymptomLogs } from '@/features/daylog/hooks';
 import { setDayStatus, saveSickDay } from '@/features/daylog/service';
 import { findEpisodeForDate } from '@/features/episodes/utils';
 import { todayStr } from '@/shared/lib/date';
 import { Chip, Segmented } from '@/shared/ui/Chip';
-import { EmptyState } from '@/shared/ui/EmptyState';
-import { Avatar } from '@/shared/ui/Avatar';
-import { Stethoscope } from 'lucide-react';
 import { CalendarGrid, pad } from './components/CalendarGrid';
 import { DayDetailSheet } from './components/DayDetailSheet';
 import { InsightsView } from './components/InsightsView';
+import { EpisodeFilters } from './components/EpisodeFilters';
+import { EpisodeHistoryList } from './components/EpisodeHistoryList';
+import {
+  EMPTY_EPISODE_FILTERS,
+  filterEpisodes,
+  hasEpisodeFilters,
+} from './episodeFilters';
 import { useNavigate } from 'react-router-dom';
 import SickSheet from '@/features/daylog/components/SickSheet';
 import type { Member } from '@/features/members/types';
@@ -34,6 +38,7 @@ export default function HistoryPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [sickFor, setSickFor] = useState<Member | null>(null);
   const [view, setView] = useState<HistoryView>('kalender');
+  const [episodeFilters, setEpisodeFilters] = useState(EMPTY_EPISODE_FILTERS);
 
   const today = todayStr(currentDate);
   const insightStart = todayStr(subDays(currentDate, 89));
@@ -50,6 +55,11 @@ export default function HistoryPage() {
     today,
     view === 'insight',
   );
+  const symptomLogsResult = useSymptomLogs(
+    family?.id ?? '',
+    episodeFilters.symptom,
+    view === 'penyakit',
+  );
 
   if (!family || !user) return null;
 
@@ -60,8 +70,16 @@ export default function HistoryPage() {
     setSelected(null);
   }
 
-  const sortedEpisodes = [...episodes].sort((a, b) => b.startDate.localeCompare(a.startDate));
-  const memberMap = Object.fromEntries(members.map((m) => [m.id, m]));
+  const symptomEpisodeIds = new Set(
+    symptomLogsResult.data.flatMap((log) => log.episodeId ? [log.episodeId] : []),
+  );
+  const filteredEpisodes = filterEpisodes(
+    episodes,
+    members,
+    episodeFilters,
+    symptomEpisodeIds,
+    today,
+  );
 
   return (
     <div className="flex-1 overflow-y-auto pb-4">
@@ -112,51 +130,26 @@ export default function HistoryPage() {
             />
           </>
         ) : view === 'penyakit' ? (
-          /* Episode list */
-          <div className="space-y-2">
-            {sortedEpisodes.length === 0 && (
-              <EmptyState
-                message="Belum ada riwayat penyakit."
-                icon={<Stethoscope size={36} />}
+          <div className="space-y-4">
+            <EpisodeFilters
+              filters={episodeFilters}
+              members={members}
+              today={today}
+              onChange={setEpisodeFilters}
+            />
+            {symptomLogsResult.error ? (
+              <p className="py-8 text-center text-sm text-sev-parah">
+                Filter gejala gagal dimuat.
+              </p>
+            ) : (
+              <EpisodeHistoryList
+                episodes={filteredEpisodes}
+                members={members}
+                filtered={hasEpisodeFilters(episodeFilters)}
+                loading={symptomLogsResult.loading}
+                onOpen={(id) => navigate(`/riwayat/penyakit/${id}`)}
               />
             )}
-            {sortedEpisodes.map((ep) => {
-              const member = memberMap[ep.memberId];
-              return (
-                <button
-                  key={ep.id}
-                  id={`ep-${ep.id}`}
-                  onClick={() => navigate(`/riwayat/penyakit/${ep.id}`)}
-                  className={
-                    'w-full flex items-center gap-3 bg-surface rounded-[var(--radius-card)] '
-                    + 'p-3 shadow-sm text-left active:scale-98 transition-all'
-                  }
-                >
-                  {member && <Avatar name={member.name} color={member.color} size="sm" />}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-ink text-sm truncate">{ep.illness}</p>
-                    <p className="text-xs text-ink-muted">
-                      {member?.name} · {ep.startDate}
-                      {ep.endDate && ep.endDate !== ep.startDate ? ` – ${ep.endDate}` : ''}
-                    </p>
-                    {(ep.visits?.length ?? 0) > 0 && (
-                      <p className="text-xs text-ink-muted">
-                        {ep.visits?.length} kunjungan dokter
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className={`flex-shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                      ep.endDate === null
-                        ? 'bg-sev-parah/10 text-sev-parah'
-                        : 'bg-sev-sehat/10 text-sev-sehat'
-                    }`}
-                  >
-                    {ep.endDate === null ? 'Berlangsung' : 'Sembuh'}
-                  </span>
-                </button>
-              );
-            })}
           </div>
         ) : (
           <InsightsView

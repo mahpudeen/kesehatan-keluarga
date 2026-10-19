@@ -56,6 +56,21 @@ export function useDateRangeLogs(
   return useCollection<DayLog>(q, transformDayLog);
 }
 
+/** Subscribe only to logs containing one selected symptom. */
+export function useSymptomLogs(familyId: string, symptom: string, enabled = true) {
+  const q = useMemo(
+    () =>
+      enabled && familyId && symptom
+        ? query(
+            collection(db, 'families', familyId, 'dayLogs'),
+            where('symptoms', 'array-contains', symptom),
+          )
+        : null,
+    [enabled, familyId, symptom],
+  );
+  return useCollection<DayLog>(q, transformDayLog);
+}
+
 /** Subscribe to the sick-day logs attached to one episode. */
 export function useEpisodeLogs(familyId: string, episodeId: string) {
   const q = useMemo(

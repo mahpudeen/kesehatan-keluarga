@@ -8,3 +8,14 @@ export interface HealthInsights {
   topMemberName: string | null;
   topSymptom: string | null;
 }
+
+export type EpisodeStatusFilter = 'all' | 'open' | 'closed';
+
+export interface EpisodeFilters {
+  search: string;
+  memberId: string;
+  status: EpisodeStatusFilter;
+  symptom: string;
+  startDate: string;
+  endDate: string;
+}
