@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useFamily } from '@/features/family/FamilyContext';
 import { useMembers } from '@/features/members/MembersContext';
-import { addMember, archiveMember } from '@/features/members/service';
+import { addMember, archiveMember, updateMember } from '@/features/members/service';
 import { createInvite } from '@/features/invites/service';
+import { fireAndForget } from '@/shared/firebase/fireAndForget';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { InputField, SelectField } from '@/shared/ui/Field';
@@ -22,6 +23,7 @@ export default function FamilyPage() {
   const [name, setName] = useState('');
   const [relation, setRelation] = useState<Relation>('anak');
   const [saving, setSaving] = useState(false);
+  const [editTarget, setEditTarget] = useState<Member | null>(null);
 
   const [archiveTarget, setArchiveTarget] = useState<Member | null>(null);
 
@@ -33,17 +35,40 @@ export default function FamilyPage() {
 
   if (!family || !user) return null;
 
+  const familyId = family.id;
+  const uid = user.uid;
   const isOwner = family.ownerUid === user.uid;
 
   async function handleAdd() {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await addMember(family!.id, name.trim(), relation, members.length);
+      await addMember(familyId, name.trim(), relation, members.length);
       setName('');
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleEdit(member: Member) {
+    setEditTarget(member);
+    setName(member.name);
+    setRelation(member.relation);
+  }
+
+  function cancelEdit() {
+    setEditTarget(null);
+    setName('');
+    setRelation('anak');
+  }
+
+  function handleUpdate() {
+    if (!editTarget || !name.trim()) return;
+    fireAndForget(
+      updateMember(familyId, editTarget.id, { name: name.trim(), relation }),
+      'update-member',
+    );
+    cancelEdit();
   }
 
   async function handleCreateInvite() {
@@ -51,7 +76,7 @@ export default function FamilyPage() {
     setInviteError('');
     setCopied(false);
     try {
-      const code = await createInvite(family!.id, user!.uid);
+      const code = await createInvite(familyId, uid);
       setInviteCode(code);
     } catch {
       setInviteError('Gagal membuat kode. Coba lagi.');
@@ -86,13 +111,22 @@ export default function FamilyPage() {
                     <p className="font-semibold text-ink text-sm truncate">{m.name}</p>
                     <p className="text-xs text-ink-muted capitalize">{m.relation}</p>
                   </div>
-                  <button
-                    id={`btn-archive-${m.id}`}
-                    onClick={() => setArchiveTarget(m)}
-                    className="text-xs text-ink-muted underline underline-offset-2 flex-shrink-0"
-                  >
-                    Arsipkan
-                  </button>
+                  <div className="flex flex-shrink-0 items-center">
+                    <button
+                      id={`btn-edit-${m.id}`}
+                      onClick={() => handleEdit(m)}
+                      className="min-h-11 px-2 text-xs font-semibold text-primary"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      id={`btn-archive-${m.id}`}
+                      onClick={() => setArchiveTarget(m)}
+                      className="min-h-11 px-2 text-xs text-ink-muted"
+                    >
+                      Arsipkan
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -101,7 +135,9 @@ export default function FamilyPage() {
 
         {/* Add member form */}
         <section className="bg-surface rounded-[var(--radius-card)] p-4 shadow-sm space-y-3">
-          <h2 className="font-semibold text-ink">Tambah anggota</h2>
+          <h2 className="font-semibold text-ink">
+            {editTarget ? 'Edit anggota' : 'Tambah anggota'}
+          </h2>
           <InputField
             id="member-name"
             label="Nama"
@@ -121,14 +157,25 @@ export default function FamilyPage() {
               </option>
             ))}
           </SelectField>
-          <Button
-            id="btn-add-member"
-            onClick={handleAdd}
-            disabled={!name.trim() || saving}
-            fullWidth
-          >
-            {saving ? 'Menyimpan...' : 'Tambah anggota'}
-          </Button>
+          <div className={editTarget ? 'grid grid-cols-2 gap-3' : undefined}>
+            {editTarget && (
+              <Button variant="ghost" onClick={cancelEdit} fullWidth>
+                Batal
+              </Button>
+            )}
+            <Button
+              id={editTarget ? 'btn-update-member' : 'btn-add-member'}
+              onClick={editTarget ? handleUpdate : handleAdd}
+              disabled={!name.trim() || saving}
+              fullWidth
+            >
+              {saving
+                ? 'Menyimpan...'
+                : editTarget
+                  ? 'Simpan perubahan'
+                  : 'Tambah anggota'}
+            </Button>
+          </div>
         </section>
 
         {/* Invite panel (owner only) */}
@@ -186,7 +233,7 @@ export default function FamilyPage() {
         confirmLabel="Arsipkan"
         onConfirm={() => {
           if (!archiveTarget) return;
-          archiveMember(family.id, archiveTarget.id);
+          archiveMember(familyId, archiveTarget.id);
           setArchiveTarget(null);
         }}
         onCancel={() => setArchiveTarget(null)}

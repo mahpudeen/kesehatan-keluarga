@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useEffectEvent, useRef, type ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 
 interface SheetProps {
@@ -14,6 +14,7 @@ interface SheetProps {
  */
 export function Sheet({ open, onClose, children, className }: SheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
+  const handleClose = useEffectEvent(onClose);
 
   // Focus trap
   useEffect(() => {
@@ -26,7 +27,7 @@ export function Sheet({ open, onClose, children, className }: SheetProps) {
     focusable[0]?.focus();
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
       if (e.key === 'Tab') {
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
@@ -45,7 +46,7 @@ export function Sheet({ open, onClose, children, className }: SheetProps) {
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
