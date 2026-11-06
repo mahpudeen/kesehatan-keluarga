@@ -1,1 +1,2 @@
-@import "tailwindcss";
+/* Redirects to the real design system CSS */
+@import './styles/index.css';
