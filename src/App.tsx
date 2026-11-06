@@ -4,7 +4,6 @@ import { FamilyProvider } from '@/features/family/FamilyContext';
 import { MembersProvider } from '@/features/members/MembersContext';
 import AppRouter from './app/router.tsx';
 
-
 /** Composes providers in order: Auth > Family > Members > Router. */
 export default function App() {
   return (
